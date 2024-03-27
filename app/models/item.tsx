@@ -2,6 +2,7 @@ export interface Item {
   name: string;
   claimed: boolean;
   claimer: Person | null;
+  deadline?: Date;
   category?: string;
 }
 

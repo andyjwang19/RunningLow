@@ -5,14 +5,50 @@ import {
   Animated,
   Button,
   TouchableWithoutFeedback,
+  TextInput,
 } from "react-native";
 import ChecklistView from "./ChecklistView";
 import { useEffect, useRef, useState } from "react";
 import { Item } from "./models/item";
+import { listTextStyle, textButtonStyle } from "./util/text";
 
 export default function MainView() {
   const [selected, setSelected] = useState<Item[]>([]);
   const [confirmPressed, setConfirmPressed] = useState(false);
+  const [addingItem, setAddingItem] = useState(false);
+  const [addItemName, setAddItemName] = useState("");
+  // api call here
+  // request data from backend upon load up, but then keep local state. Updates are sent to database, but no more getter requests.
+  const [lowItems, _setLowItems] = useState<Item[]>([
+    {
+      name: "Paper Towels",
+      claimed: false,
+      claimer: null,
+    },
+    {
+      name: "Eggs",
+      claimed: false,
+      claimer: null,
+    },
+    {
+      name: "Coffee Filters",
+      claimed: false,
+      claimer: null,
+    },
+    {
+      name: "Olive Oil",
+      claimed: false,
+      claimer: null,
+    },
+  ]);
+
+  const addLowItem = (item: Item) => {
+    if (lowItems.find((lowItem) => lowItem.name === item.name)) {
+      throw new Error();
+    }
+    // send API Patch query
+    _setLowItems([item, ...lowItems]);
+  };
 
   const addSlideAnim = useRef(new Animated.Value(0)).current;
   const confirmSlideAnim = useRef(new Animated.Value(200)).current;
@@ -68,7 +104,6 @@ export default function MainView() {
     setConfirmPressed(false);
   };
 
-  const textButtonStyle = "font-sans text-3xl text-salmon mt-5";
   const buttonBorder = " border border-periwinkle border-4 ";
 
   const DeadlineOption = ({
@@ -89,6 +124,7 @@ export default function MainView() {
       </View>
     );
   };
+
   return (
     <View className="w-screen h-screen bg-periwinkle items-center">
       <View className="flex flex-col pt-20 w-full h-56 bg-navy px-4">
@@ -96,13 +132,36 @@ export default function MainView() {
           Running Low!
         </Text>
       </View>
-      <ChecklistView selected={selected} setSelected={setSelected} />
-      <Animated.View
-        className="flex items-center justify-center absolute bottom-0 w-28 h-28 rounded-full bg-navy mb-8"
-        style={{ transform: [{ translateY: addSlideAnim }] }}
+      {addingItem ? (
+        <TextInput
+          className={`w-full mt-5 px-[67px] ${listTextStyle} absolute pt-2 pb-2`}
+          onChangeText={setAddItemName}
+        />
+      ) : null}
+      <ChecklistView
+        items={lowItems}
+        selected={selected}
+        setSelected={setSelected}
+      />
+
+      <TouchableWithoutFeedback
+        onPress={() => {
+          if (addingItem) {
+            addLowItem({ name: addItemName, claimed: false, claimer: null });
+            setAddItemName("");
+            setAddingItem(false);
+          } else {
+            setAddingItem(true);
+          }
+        }}
       >
-        <Text className="mt-1 ml-1 text-6xl text-salmon">+</Text>
-      </Animated.View>
+        <Animated.View
+          className="flex items-center justify-center absolute bottom-0 w-28 h-28 rounded-full bg-navy mb-8"
+          style={{ transform: [{ translateY: addSlideAnim }] }}
+        >
+          <Text className="mt-1 ml-1 text-6xl text-salmon">+</Text>
+        </Animated.View>
+      </TouchableWithoutFeedback>
       {confirmPressed ? (
         <View className="absolute bottom-0 flex flex-col items-center">
           <DeadlineOption
@@ -120,7 +179,13 @@ export default function MainView() {
         </View>
       ) : null}
       <TouchableWithoutFeedback
-        onPress={() => setConfirmPressed(true)}
+        onPress={() => {
+          if (confirmPressed) {
+            confirm(whenOptions.today);
+          } else {
+            setConfirmPressed(true);
+          }
+        }}
         // onLongPress={() => setConfirmPressed(true)}
         // onPressOut={(event) => {setConfirmPressed(false)}}
       >

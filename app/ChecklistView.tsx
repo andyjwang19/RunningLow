@@ -48,43 +48,23 @@ const ChecklistItem = ({
             addToSelected(item);
           }
         }}
-        className="ml-4 py-4 "
+        className="ml-4 py-4"
       />
     </View>
   );
 };
 
 type CheckListViewProps = {
+  items: Item[];
   selected: Item[];
   setSelected: React.Dispatch<React.SetStateAction<Item[]>>;
 };
 
 export default function ChecklistView({
+  items,
   selected,
   setSelected,
 }: CheckListViewProps) {
-  const lowItems: Item[] = [
-    {
-      name: "Paper Towels",
-      claimed: false,
-      claimer: null,
-    },
-    {
-      name: "Eggs",
-      claimed: false,
-      claimer: null,
-    },
-    {
-      name: "Coffee Filters",
-      claimed: false,
-      claimer: null,
-    },
-    {
-      name: "Olive Oil",
-      claimed: false,
-      claimer: null,
-    },
-  ];
   const addToSelected = (item: Item) => {
     if (selected.find((sItem) => sItem.name === item.name)) {
       return null;
@@ -105,7 +85,7 @@ export default function ChecklistView({
 
   return (
     <View className="overflow-scroll  w-full pt-4">
-      {lowItems.map((item) => (
+      {items.map((item) => (
         <ChecklistItem
           item={item}
           selected={selected}

@@ -8,7 +8,10 @@ module.exports = {
         navy: "#0D3B66",
         salmon: "#E5C1BD",
       },
-      fontFamily: { Anybody: "AnybodyUltraCondensed-Bold.ttf" },
+      fontFamily: {
+        Anybody: "AnybodyUltraCondensed-Bold.ttf",
+        Pioggia: "Pioggia.ttf",
+      },
     },
   },
   plugins: [],

@@ -1,11 +1,12 @@
 import { View, Text, Button } from "react-native";
 import { Item } from "../models/item";
 import ChecklistItem from "./CheckListItem";
+import { Entry } from "../../src/API";
 
 type CheckListViewProps = {
-  items: Item[];
-  selected: Item[];
-  setSelected: React.Dispatch<React.SetStateAction<Item[]>>;
+  items: Entry[];
+  selected: Entry[];
+  setSelected: React.Dispatch<React.SetStateAction<Entry[]>>;
 };
 
 export default function ChecklistView({
@@ -13,8 +14,8 @@ export default function ChecklistView({
   selected,
   setSelected,
 }: CheckListViewProps) {
-  const addToSelected = (item: Item) => {
-    if (selected.find((sItem) => sItem.name === item.name)) {
+  const addToSelected = (item: Entry) => {
+    if (selected.find((sItem) => sItem.content === item.content)) {
       return null;
     } else {
       setSelected([...selected, item]);
@@ -22,9 +23,9 @@ export default function ChecklistView({
     }
   };
 
-  const removeFromSelected = (item: Item) => {
-    if (selected.find((sItem) => sItem.name === item.name)) {
-      setSelected(selected.filter((sItem) => sItem.name !== item.name));
+  const removeFromSelected = (item: Entry) => {
+    if (selected.find((sItem) => sItem.content === item.content)) {
+      setSelected(selected.filter((sItem) => sItem.content !== item.content));
       return null;
     } else {
       return null;
@@ -37,7 +38,7 @@ export default function ChecklistView({
         if (!item._deleted) {
           return (
             <ChecklistItem
-              key={item.name}
+              key={item.id}
               item={item}
               selected={selected}
               addToSelected={addToSelected}
@@ -47,7 +48,7 @@ export default function ChecklistView({
         }
       })}
       {selected.map((selectedItem) => (
-        <Text key={selectedItem.name}>{selectedItem.name}</Text>
+        <Text key={selectedItem.content}>{selectedItem.content}</Text>
       ))}
     </View>
   );

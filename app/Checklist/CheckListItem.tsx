@@ -2,12 +2,13 @@ import { useEffect, useState } from "react";
 import { View } from "react-native";
 import BouncyCheckbox from "react-native-bouncy-checkbox";
 import { Item } from "../models/item";
+import { Entry } from "../../src/API";
 
 type ChecklistItemProps = {
-  item: Item;
-  selected: Item[];
-  addToSelected: (item: Item) => null;
-  removeFromSelected: (item: Item) => null;
+  item: Entry;
+  selected: Entry[];
+  addToSelected: (item: Entry) => null;
+  removeFromSelected: (item: Entry) => null;
 };
 
 export default function ChecklistItem({
@@ -17,11 +18,11 @@ export default function ChecklistItem({
   removeFromSelected,
 }: ChecklistItemProps) {
   const [isChecked, setIsChecked] = useState(
-    selected.find((sItem) => sItem.name === item.name) !== undefined
+    selected.find((sItem) => sItem.content === item.content) !== undefined
   );
   useEffect(() => {
     setIsChecked(
-      selected.find((sItem) => sItem.name === item.name) !== undefined
+      selected.find((sItem) => sItem.content === item.content) !== undefined
     );
   }, [selected]);
   return (
@@ -30,7 +31,7 @@ export default function ChecklistItem({
         size={35}
         fillColor="black"
         unfillColor="white"
-        text={item.name}
+        text={item.content}
         iconStyle={{ borderColor: "black" }}
         innerIconStyle={{ borderWidth: 2 }}
         isChecked={isChecked}

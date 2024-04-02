@@ -14,6 +14,7 @@ Amplify.configure(amplifyconfig);
 export default function App() {
   const [fontsLoaded] = useFonts({
     Anybody: require("./assets/fonts/AnybodyUltraCondensed-Bold.ttf"),
+    Pioggia: require("./assets/fonts/Pioggia.ttf"),
   });
 
   if (!fontsLoaded) return null;

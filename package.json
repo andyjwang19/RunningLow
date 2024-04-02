@@ -10,6 +10,10 @@
   },
   "dependencies": {
     "@aws-amplify/react-native": "~1.0.24",
+    "@fortawesome/fontawesome-svg-core": "~6.5.1",
+    "@fortawesome/free-brands-svg-icons": "~6.5.1",
+    "@fortawesome/free-solid-svg-icons": "~6.5.1",
+    "@fortawesome/react-native-fontawesome": "~0.3.0",
     "@react-native-async-storage/async-storage": "~1.23.1",
     "@react-native-community/netinfo": "~11.3.1",
     "aws-amplify": "~6.0.23",
@@ -19,11 +23,14 @@
     "react": "18.2.0",
     "react-native": "0.73.6",
     "react-native-bouncy-checkbox": "~3.0.7",
-    "react-native-get-random-values": "~1.11.0"
+    "react-native-element-dropdown": "~2.10.4",
+    "react-native-get-random-values": "~1.11.0",
+    "react-native-svg": "~15.1.0"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",
     "@types/react": "~18.2.45",
+    "@types/react-native-vector-icons": "~6.4.18",
     "tailwindcss": "3.3.2",
     "typescript": "^5.1.3"
   },

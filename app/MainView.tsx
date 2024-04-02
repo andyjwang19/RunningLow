@@ -12,63 +12,112 @@ import { useEffect, useRef, useState } from "react";
 import { Item } from "./models/item";
 import { listTextStyle, textButtonStyle } from "./util/text";
 import { generateClient } from "aws-amplify/api";
-import { listEntries } from "../src/graphql/queries";
+import { listEntries, listRunningLowData } from "../src/graphql/queries";
 import { createEntry, deleteEntry } from "../src/graphql/mutations";
 import { addEntry, removeEntry } from "./util/entryAPI";
+import GroupHeader from "./GroupHeader";
+import { Entry, ListEntriesQueryVariables, RunningLowData } from "../src/API";
+import { getGroup } from "./util/group";
 
 export default function MainView() {
-  const [selected, setSelected] = useState<Item[]>([]);
+  const [groups, setGroups] = useState<RunningLowData[]>([]);
+  const [lowItems, _setLowItems] = useState<Entry[]>([]);
+
+  // const [groupId, setGroupId] = useState("");
+
+  const [selected, setSelected] = useState<Entry[]>([]);
   const [confirmPressed, setConfirmPressed] = useState(false);
   const [addingItem, setAddingItem] = useState(false);
   const [addItemName, setAddItemName] = useState("");
-  // api call here
+  const [currentGroup, setCurrentGroup] = useState<
+    RunningLowData | undefined
+  >();
+
   // request data from backend upon load up, but then keep local state. Updates are sent to database, but no more getter requests.
-  const [lowItems, _setLowItems] = useState<Item[]>([]);
   useEffect(() => {
-    fetchData();
+    // console.log(`group number a`, groupId);
+    initialFetchGroup();
   }, []);
 
   const client = generateClient();
-  async function fetchData() {
+
+  async function fetchEntryData(group: RunningLowData) {
     try {
-      const entryData = await client.graphql({
-        query: listEntries,
-      });
-      const tmp = entryData.data.listEntries.items;
-      _setLowItems(
-        tmp.map((entry) => {
-          return {
-            id: entry.id,
-            name: entry.content,
-            claimed: entry.claimed,
-            claimer: null,
-            _deleted: entry._deleted,
-          } as Item;
+      const entryVariables: ListEntriesQueryVariables = {
+        filter: {
+          runningLowDataEntriesId: {
+            eq: group.id,
+          },
+        },
+      };
+      const entryData = (
+        await client.graphql({
+          query: listEntries,
+          variables: entryVariables,
         })
-      );
+      ).data.listEntries.items;
+      _setLowItems(entryData);
     } catch (err) {
-      console.log("error fetching ", err);
+      console.log(`Error fetching entries `, err);
+    }
+  }
+  async function fetchGroupData(groupId?: string) {
+    try {
+      const firstOrCurrentGroup =
+        groupId !== undefined ? getGroup(groups, groupId) : groups[0];
+
+      if (firstOrCurrentGroup === undefined) {
+        throw new Error();
+      }
+      if (groupId !== undefined) {
+        _setLowItems([]);
+      }
+      fetchEntryData(firstOrCurrentGroup);
+
+      setCurrentGroup(firstOrCurrentGroup);
+    } catch (err) {
+      console.log("error fetching/updatign group specific data ", err);
+    }
+  }
+  async function initialFetchGroup() {
+    try {
+      const groupData = (
+        await client.graphql({
+          query: listRunningLowData,
+        })
+      ).data.listRunningLowData.items;
+
+      await setGroups(groupData);
+      fetchGroupData();
+    } catch (err) {
+      console.log("error fetching groups initially ", err);
     }
   }
 
-  const addLowItem = async (item: Item) => {
+  const addLowItem = async (entryName: string) => {
     if (
       lowItems.find(
-        (lowItem) => lowItem.name === item.name && !lowItem._deleted
+        (lowItem) => lowItem.content === entryName && !lowItem._deleted
       )
     ) {
+      throw new Error("name exists already");
+    }
+
+    if (currentGroup === undefined || currentGroup.id === undefined) {
       throw new Error();
     }
-    // send API Patch query
-    const id = await addEntry(client, item);
-    _setLowItems([{ ...item, id: id }, ...lowItems]);
+
+    const entry = await addEntry(client, entryName, currentGroup.id);
+    if (entry !== undefined && entry !== null) {
+      _setLowItems([entry, ...lowItems]);
+    }
   };
 
-  const removeLowItems = (items: Item[]) => {
+  const removeLowItems = (items: Entry[]) => {
     items.map((item) => removeEntry(client, item));
     _setLowItems(
       lowItems.filter((lowItem) => {
-        return items.find((i) => lowItem.name === i.name) === undefined;
+        return items.find((i) => lowItem.content === i.content) === undefined;
       })
     );
   };
@@ -152,10 +201,15 @@ export default function MainView() {
 
   return (
     <View className="w-screen h-screen bg-periwinkle items-center">
-      <View className="flex flex-col pt-20 w-full h-56 bg-navy px-4">
-        <Text className="font-[Anybody] text-6xl text-white tracking-widest">
+      <View className="flex flex-col w-full  bg-navy px-4">
+        <Text className="font-[Anybody] mt-20 text-7xl h-20 text-white tracking-widest">
           Running Low!
         </Text>
+        <GroupHeader
+          groups={groups}
+          currentGroup={currentGroup}
+          setCurrentGroup={fetchGroupData}
+        />
       </View>
       {addingItem ? (
         <TextInput
@@ -172,12 +226,7 @@ export default function MainView() {
       <TouchableWithoutFeedback
         onPress={() => {
           if (addingItem) {
-            addLowItem({
-              name: addItemName,
-              claimed: false,
-              claimer: null,
-              _deleted: false,
-            });
+            addLowItem(addItemName);
             setAddItemName("");
             setAddingItem(false);
           } else {

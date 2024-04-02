@@ -7,10 +7,14 @@ import {
   TouchableWithoutFeedback,
   TextInput,
 } from "react-native";
-import ChecklistView from "./ChecklistView";
+import ChecklistView from "./Checklist/ChecklistView";
 import { useEffect, useRef, useState } from "react";
 import { Item } from "./models/item";
 import { listTextStyle, textButtonStyle } from "./util/text";
+import { generateClient } from "aws-amplify/api";
+import { listEntries } from "../src/graphql/queries";
+import { createEntry, deleteEntry } from "../src/graphql/mutations";
+import { addEntry, removeEntry } from "./util/entryAPI";
 
 export default function MainView() {
   const [selected, setSelected] = useState<Item[]>([]);
@@ -19,35 +23,54 @@ export default function MainView() {
   const [addItemName, setAddItemName] = useState("");
   // api call here
   // request data from backend upon load up, but then keep local state. Updates are sent to database, but no more getter requests.
-  const [lowItems, _setLowItems] = useState<Item[]>([
-    {
-      name: "Paper Towels",
-      claimed: false,
-      claimer: null,
-    },
-    {
-      name: "Eggs",
-      claimed: false,
-      claimer: null,
-    },
-    {
-      name: "Coffee Filters",
-      claimed: false,
-      claimer: null,
-    },
-    {
-      name: "Olive Oil",
-      claimed: false,
-      claimer: null,
-    },
-  ]);
+  const [lowItems, _setLowItems] = useState<Item[]>([]);
+  useEffect(() => {
+    fetchData();
+  }, []);
 
-  const addLowItem = (item: Item) => {
-    if (lowItems.find((lowItem) => lowItem.name === item.name)) {
+  const client = generateClient();
+  async function fetchData() {
+    try {
+      const entryData = await client.graphql({
+        query: listEntries,
+      });
+      const tmp = entryData.data.listEntries.items;
+      _setLowItems(
+        tmp.map((entry) => {
+          return {
+            id: entry.id,
+            name: entry.content,
+            claimed: entry.claimed,
+            claimer: null,
+            _deleted: entry._deleted,
+          } as Item;
+        })
+      );
+    } catch (err) {
+      console.log("error fetching ", err);
+    }
+  }
+
+  const addLowItem = async (item: Item) => {
+    if (
+      lowItems.find(
+        (lowItem) => lowItem.name === item.name && !lowItem._deleted
+      )
+    ) {
       throw new Error();
     }
     // send API Patch query
-    _setLowItems([item, ...lowItems]);
+    const id = await addEntry(client, item);
+    _setLowItems([{ ...item, id: id }, ...lowItems]);
+  };
+
+  const removeLowItems = (items: Item[]) => {
+    items.map((item) => removeEntry(client, item));
+    _setLowItems(
+      lowItems.filter((lowItem) => {
+        return items.find((i) => lowItem.name === i.name) === undefined;
+      })
+    );
   };
 
   const addSlideAnim = useRef(new Animated.Value(0)).current;
@@ -100,6 +123,8 @@ export default function MainView() {
     thisMonth = "This Month",
   }
   const confirm = (when: whenOptions) => {
+    console.log(`confirm rem selected `, selected);
+    removeLowItems(selected);
     setSelected([]);
     setConfirmPressed(false);
   };
@@ -134,7 +159,7 @@ export default function MainView() {
       </View>
       {addingItem ? (
         <TextInput
-          className={`w-full mt-5 px-[67px] ${listTextStyle} absolute pt-2 pb-2`}
+          className={`w-full h-16 bg-gray-200 px-[67px] ${listTextStyle} pt-1 pb-1`}
           onChangeText={setAddItemName}
         />
       ) : null}
@@ -147,7 +172,12 @@ export default function MainView() {
       <TouchableWithoutFeedback
         onPress={() => {
           if (addingItem) {
-            addLowItem({ name: addItemName, claimed: false, claimer: null });
+            addLowItem({
+              name: addItemName,
+              claimed: false,
+              claimer: null,
+              _deleted: false,
+            });
             setAddItemName("");
             setAddingItem(false);
           } else {

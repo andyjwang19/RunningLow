@@ -6,6 +6,11 @@ import { useFonts } from "expo-font";
 import { NativeWindStyleSheet } from "nativewind";
 import MainView from "./app/MainView";
 
+import { Amplify } from "aws-amplify";
+import amplifyconfig from "./src/amplifyconfiguration.json";
+import TestingGraphQL from "./app/TestingGraphQL";
+Amplify.configure(amplifyconfig);
+
 export default function App() {
   const [fontsLoaded] = useFonts({
     Anybody: require("./assets/fonts/AnybodyUltraCondensed-Bold.ttf"),
@@ -13,6 +18,7 @@ export default function App() {
 
   if (!fontsLoaded) return null;
   return <MainView />;
+  // return <TestingGraphQL />;
 }
 
 NativeWindStyleSheet.setOutput({

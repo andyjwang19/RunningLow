@@ -1,0 +1,10 @@
+{
+  "resourceName": "rlDatabase",
+  "tableName": "Items",
+  "partitionKey": {
+    "fieldName": "id",
+    "fieldType": "number"
+  },
+  "gsi": [],
+  "triggerFunctions": []
+}
